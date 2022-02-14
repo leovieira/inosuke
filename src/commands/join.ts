@@ -46,6 +46,8 @@ const join = async (client: Client, msg: Message, args: string[]) => {
         ]);
       } catch (error) {
         connection.destroy();
+        Servers.removeServer(msg.guild.id);
+        await msg.channel.send('Disconnected.');
       }
     }
   );
