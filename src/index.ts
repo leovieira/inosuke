@@ -1,6 +1,9 @@
 import { Client, Intents } from 'discord.js';
 import 'dotenv/config';
+import keepAlive from './server';
 import commandHandler from './commandHandler';
+
+keepAlive();
 
 const intents = new Intents();
 intents.add([
@@ -12,7 +15,7 @@ intents.add([
 const client = new Client({ intents });
 
 client.on('ready', () => {
-  console.log('Ready!');
+  console.log('Bot is ready!');
   client.user.setActivity('EMINEM', { type: 'LISTENING' });
 });
 
