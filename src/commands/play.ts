@@ -5,9 +5,24 @@ import {
   createAudioResource,
 } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
+import ytsr from 'ytsr';
 import join from './join';
 import Servers from '../models/Servers';
 import Music from '../models/Music';
+import { prefix } from '../../config.json';
+
+const filter = async (res: Message) => {
+  if (!res.content.startsWith(prefix)) return false;
+
+  const args = res.content.slice(prefix.length).trim().split(/\s+/);
+  const command = args.shift().toLowerCase();
+  const option = Number.parseInt(args[0]);
+
+  if (command !== 'select' || !Number.isInteger(option)) return false;
+
+  if (option < 1 || option > 5) return false;
+  return true;
+};
 
 const play = async (client: Client, msg: Message, args: string[]) => {
   if (!msg.member.voice.channel) {
@@ -35,6 +50,72 @@ const play = async (client: Client, msg: Message, args: string[]) => {
 
   if (ytdl.validateURL(args[0])) {
     const ytdlInfo = await ytdl.getInfo(args[0]);
+    const info = {
+      title: ytdlInfo.videoDetails.title,
+      author: ytdlInfo.videoDetails.author.name,
+      link: ytdlInfo.videoDetails.video_url,
+    };
+    const music = new Music(info.title, info.author, info.link);
+    server.getPlaylist().addMusic(music);
+    await msg.channel.send(
+      `${music.getTitle()} has been added to the playlist.`
+    );
+  } else {
+    var query = '';
+
+    for (let i = 0; i < args.length; i++) {
+      query += args[i];
+
+      if (i < args.length - 1) query += ' ';
+    }
+
+    const searchFilters = await ytsr.getFilters(query);
+    const searchFilter = searchFilters.get('Type').get('Video');
+    const searchResults = await ytsr(searchFilter.url, { limit: 5 });
+
+    var msgText = 'Select a music:\n\n';
+    var count = 0;
+
+    searchResults.items.forEach((item: ytsr.Video) => {
+      msgText += `**${++count}:** ${item.title}\n`;
+    });
+
+    msgText += '\nType "!select <option>" to add the music.';
+
+    const msgMusicList = await msg.channel.send(msgText);
+    var option = -1;
+
+    await msg.channel
+      .awaitMessages({
+        filter,
+        max: 1,
+        maxProcessed: 1,
+        time: 30000,
+        errors: ['time'],
+      })
+      .then(async (res) => {
+        if (res.first().author.id !== msg.author.id) return;
+
+        const args = res
+          .first()
+          .content.slice(prefix.length)
+          .trim()
+          .split(/\s+/);
+        args.shift();
+        option = Number.parseInt(args[0]) - 1;
+
+        await msgMusicList.delete();
+        await res.first().delete();
+      })
+      .catch((err) => {});
+
+    if (option === -1) return;
+
+    const musicUrl = searchResults.items[option].url; // ts error
+
+    if (!ytdl.validateURL(musicUrl)) return;
+
+    const ytdlInfo = await ytdl.getInfo(musicUrl);
     const info = {
       title: ytdlInfo.videoDetails.title,
       author: ytdlInfo.videoDetails.author.name,
