@@ -18,12 +18,17 @@ const skip = async (client: Client, msg: Message, args: string[]) => {
     const currentMusic = server.getPlaylist().getCurrentMusic();
     const nextMusic = server.getPlaylist().nextMusic();
 
-    const resource = createAudioResource(ytdl(nextMusic.getLink()), {
-      metadata: {
-        title: nextMusic.getTitle(),
-        author: nextMusic.getAuthor(),
-      },
-    });
+    const resource = createAudioResource(
+      ytdl(nextMusic.getLink(), {
+        filter: 'audioonly',
+      }),
+      {
+        metadata: {
+          title: nextMusic.getTitle(),
+          author: nextMusic.getAuthor(),
+        },
+      }
+    );
 
     server.getPlayer().play(resource);
     await msg.channel.send(`Skipped ${currentMusic.getTitle()}.`);

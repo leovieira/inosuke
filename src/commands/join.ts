@@ -59,12 +59,17 @@ const join = async (client: Client, msg: Message, args: string[]) => {
       const server = Servers.findServer(msg.guild.id);
       const nextMusic = server.getPlaylist().nextMusic();
 
-      const resource = createAudioResource(ytdl(nextMusic.getLink()), {
-        metadata: {
-          title: nextMusic.getTitle(),
-          author: nextMusic.getAuthor(),
-        },
-      });
+      const resource = createAudioResource(
+        ytdl(nextMusic.getLink(), {
+          filter: 'audioonly',
+        }),
+        {
+          metadata: {
+            title: nextMusic.getTitle(),
+            author: nextMusic.getAuthor(),
+          },
+        }
+      );
 
       server.getPlayer().play(resource);
       await msg.channel.send(`Playing ${nextMusic.getTitle()}.`);

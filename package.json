@@ -31,7 +31,7 @@
     "ffmpeg-static": "^4.4.1",
     "glob": "^7.2.0",
     "tweetnacl": "^1.0.3",
-    "ytdl-core": "^4.10.0",
+    "ytdl-core": "^4.11.5",
     "ytsr": "^3.8.0"
   }
 }
